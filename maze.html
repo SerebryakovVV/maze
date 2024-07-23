@@ -1,0 +1,168 @@
+<canvas id="canvas"></canvas>
+<script>
+
+    class Cell {
+        constructor(i, j) {
+            this.state = "initial";
+            this.i = i;
+            this.j = j;
+            this.topB = true;
+            this.rightB = true;
+            this.bottomB = true;
+            this.leftB = true;
+        }
+    }
+
+
+    class Maze {
+        constructor(width, height, cellSize) {
+            this.canvas = document.getElementById("canvas");
+            this.canvas.width = width;
+            this.canvas.height = height;
+            this.canvas.style.border = "2px solid black";
+            this.ctx = this.canvas.getContext("2d");
+            this.cellSize = cellSize;
+            this.hNumberOfCells = width / cellSize;
+            this.vNumberOfCells = height / cellSize;
+            this.mazeArray =(() => {
+                let res = [];
+                console.log(this);
+                for (let i = 0; i < this.vNumberOfCells; i++) {
+                    res.push([]);
+                    for (let j = 0; j < this.hNumberOfCells; j++) {
+                        res[i].push(new Cell(i, j));
+                    }
+                } 
+                return res;
+            })();
+        }
+
+        drawCell(cell) {
+            if (cell.state === "initial") {
+                this.ctx.fillStyle = '#bbb';
+            } else if (cell.state === "visited") {
+                this.ctx.fillStyle = '#fff';
+            } else if (cell.state === "active") {
+                this.ctx.fillStyle = 'red';
+            }
+
+            this.ctx.fillRect(cell.j*this.cellSize, cell.i*this.cellSize, this.cellSize, this.cellSize);
+            this.ctx.fillStyle = 'black';
+
+            if (cell.topB) {
+                this.ctx.beginPath();
+                this.ctx.moveTo(cell.j*this.cellSize, cell.i*this.cellSize+1);
+                this.ctx.lineTo(cell.j*this.cellSize+this.cellSize, cell.i*this.cellSize+1);
+                this.ctx.stroke();
+            }
+            if (cell.rightB) {
+                this.ctx.beginPath();
+                this.ctx.moveTo(cell.j*this.cellSize+this.cellSize-1, cell.i*this.cellSize);
+                this.ctx.lineTo(cell.j*this.cellSize+this.cellSize-1, cell.i*this.cellSize+this.cellSize);
+                this.ctx.stroke();
+            }
+            if (cell.bottomB) {
+                this.ctx.beginPath();
+                this.ctx.moveTo(cell.j*this.cellSize+this.cellSize, cell.i*this.cellSize+this.cellSize-1);
+                this.ctx.lineTo(cell.j*this.cellSize, cell.i*this.cellSize+this.cellSize-1);
+                this.ctx.stroke();
+            }
+            if (cell.leftB) {
+                this.ctx.beginPath();
+                this.ctx.moveTo(cell.j*this.cellSize+1, cell.i*this.cellSize+this.cellSize);
+                this.ctx.lineTo(cell.j*this.cellSize+1, cell.i*this.cellSize);
+                this.ctx.stroke();
+            }
+        }
+
+        draw() {
+            for (let i = 0; i < this.mazeArray.length; i++) {
+                for (let j = 0; j < this.mazeArray[i].length; j++) {
+                    this.drawCell(this.mazeArray[i][j]);
+                }
+            }
+        }
+
+        checkNeighbours(cell) {
+            let res = {};
+            if (cell.i > 0) {
+                let n = this.mazeArray[cell.i-1][cell.j];
+                if (n.state !== "visited") {
+                    res.top = n;
+                }
+            }
+            if (cell.i < this.vNumberOfCells - 1) {
+                let n = this.mazeArray[cell.i+1][cell.j];
+                if (n.state !== "visited") {
+                    res.bottom = n;
+                }
+            }
+            if (cell.j > 0) {
+                let n = this.mazeArray[cell.i][cell.j-1];
+                if (n.state !== "visited") {
+                    res.left = n;
+                }
+            }
+            if (cell.j < this.hNumberOfCells - 1) {
+                let n = this.mazeArray[cell.i][cell.j+1];
+                if (n.state !== "visited") {
+                    res.right = n;
+                }
+            }
+            return res;
+        }
+
+        generate() {
+            let mazeStack = [];
+            let activeCell;
+            mazeStack.push(this.mazeArray[0][0]);
+            while (mazeStack.length !== 0) {
+                activeCell = mazeStack.pop();
+                activeCell.state = "active";
+                // this.drawCell(activeCell);
+                let activeNeighbours = Object.keys(this.checkNeighbours(activeCell));
+                if (activeNeighbours.length !== 0) {
+                    let randomDirection = activeNeighbours[Math.floor(Math.random()*activeNeighbours.length)];
+                    let randomNeighbour = this.checkNeighbours(activeCell)[randomDirection];
+                    activeCell.state = "visited";
+                    mazeStack.push(activeCell);
+                    this.makeStep(activeCell, randomNeighbour, randomDirection);
+                    mazeStack.push(randomNeighbour);
+                } else {
+                    activeCell.state = "visited";
+                    // this.drawCell(activeCell);
+                }
+            }
+        }
+
+        makeStep(from, to, direction) {
+            if (direction === "right") {
+                from.rightB = false;
+                to.leftB = false;
+                // this.drawCell(from);
+                // this.drawCell(to);
+            } else if (direction === "bottom") {
+                from.bottomB = false;
+                to.topB = false;
+                // this.drawCell(from);
+                // this.drawCell(to);
+            } else if (direction === "left") {
+                from.leftB = false;
+                to.rightB = false;
+                // this.drawCell(from);
+                // this.drawCell(to);
+            } else if (direction === "top") {
+                from.topB = false;
+                to.bottomB = false;
+                // this.drawCell(from);
+                // this.drawCell(to);
+            }
+        }
+    }
+
+const mz = new Maze(1600, 1600, 20);
+mz.draw();
+mz.generate();
+mz.draw();
+
+</script>
